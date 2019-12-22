@@ -12,7 +12,6 @@ using namespace std;
 
 class vasuti_halozat_allapot;
 
-
 class termek
 {
     string nev, honnan, hova;
@@ -35,9 +34,7 @@ public:
     int get_mennyiseg()
     {return mennyiseg;}
     void mennyiseg_modosit(int _mennyiseg)
-    {
-        mennyiseg=_mennyiseg;
-    }
+    {mennyiseg=_mennyiseg;}
 };
 
 //ostream& operator<<(ostream& out, termek t)
@@ -49,29 +46,23 @@ public:
 class kocsi
 {
     string nev;
-    int kapacitas;
     int toltottseg;
-    bool csatlakoztatva;
-    pair<bool, string> hely;
-//    string vonat; //ha nincs csatlakoztatva: "NaN"
-//    map<string, termek> rakomanyok;
+    map<string, int> rakomany;
+    int rakomany_merete;
+    pair<bool, string> hely;//false, ha allomason van, true, ha vonaton
 public:
     kocsi(){}
     kocsi(string _nev, int _kapacitas)
     {
         nev=_nev;
-        kapacitas=_kapacitas;
         toltottseg=0;
-        csatlakoztatva=false;
     }
     string get_nev()
     {return nev;}
-    int get_maxkapacitas()
-    {return kapacitas;}
-    int get_aktualis_kapacitas()
-    {return (kapacitas-toltottseg);}
+//    int get_aktualis_kapacitas()
+//    {return (kapacitas-toltottseg);}
     bool csatlakoztatva_e()
-    {return csatlakoztatva;}
+    {return hely.first;}
 //    map<string, termek> get_rakomany()
 //    {return rakomanyok;}
 //    bool felpakol(vector<termek> _termekek)
@@ -109,13 +100,13 @@ public:
 //            }
 //        }
 //    }
-    void felcsatol()
+    void felcsatol(string _vonat)
     {
-        csatlakoztatva=true;
+        hely=pair<bool, string>(1, _vonat);
     }
-    void lecsatol()
+    void lecsatol(string _allomas)
     {
-        csatlakoztatva=false;
+        hely=pair<bool, string>(0, _allomas);
     }
     bool operator<(const kocsi& a)const
     {
@@ -127,17 +118,9 @@ public:
 
 ostream& operator<<(ostream& out, kocsi k)
 {
-    out<<"Kocsi_nev: "<<k.get_nev()<<", kapacitas: "<<k.get_maxkapacitas()<<", aktualis kapacitas: "<<k.get_aktualis_kapacitas();
+    out<<"Kocsi_nev: "<<k.get_nev();
     k.csatlakoztatva_e() ? out<<", csatlakoztatva" : out<<", nincs csatlakoztatva";
     out<<endl;
-    if(k.get_maxkapacitas()!=k.get_aktualis_kapacitas())
-    {
-//        auto r=k.get_rakomany();   //Ez még kell majd!!!
-//        for(auto ra:r)
-//        {
-//            out<<"\t"<<ra.first<<" "<<ra.second.get_mennyiseg()<<endl;
-//        }
-    }
     return out;
 }
 
@@ -350,11 +333,19 @@ class vasuti_halozat_allapot
 {
     map<string, vonat> vonatok;
     map<string, allomas> allomasok;
-    int ido;
+    int ido;//meggondolandó
 public:
+    vasuti_halozat_allapot(map<string, vonat> _vonatok, map<string, allomas> _allomasok)
+    {
+        vonatok=_vonatok;
+        allomasok=_allomasok;
+        ido=-1;//meggondolando
+    }
     vasuti_halozat_allapot(string file="teszt.txt")
     {
         map<string, set<string>> global_terkep;
+        map<string, map<int, string>> menetrendek;
+        map<string, int> vonatok_kocsikapacitasa;
         ifstream f(file);
         map<kocsi, string> _kocsik;
         vector<termek> _termekek;
@@ -378,10 +369,6 @@ public:
                 cout<<endl;
             }
         }
-    }
-    vasuti_halozat_allapot(map<string, vonat>& _vonatok, vector<termek>& _termekek, vector<kocsi>& _kocsik)
-    {
-        vonatok=_vonatok;
     }
     set<vasuti_halozat_allapot> gyerekek_general()
     {
@@ -412,6 +399,7 @@ class database
     map<string, set<string>> terkep;
     map<string, map<int, string>> menetrendek;
     map<string, int> vonatok_kocsikapacitasa;
+    map<string, int> kocsik_arukapacitasa;
     vasuti_halozat_allapot cel;
 
 };
