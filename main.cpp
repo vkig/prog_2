@@ -8,7 +8,6 @@
 #include <queue>
 #include <functional>
 
-
 using namespace std;
 
 class vasuti_halozat_allapot;
@@ -49,14 +48,15 @@ class kocsi
     string nev;
     int toltottseg;
     map<string, int> rakomany;
-    int rakomany_merete;
     pair<bool, string> hely;//false, ha allomason van, true, ha vonaton
 public:
     kocsi(){}
-    kocsi(string _nev, int _kapacitas)
+    kocsi(string _nev, int _kapacitas, string _kiindulo_pont)
     {
         nev=_nev;
         toltottseg=0;
+        hely.first=false;
+        hely.second=_kiindulo_pont;
     }
     string get_nev()
     {return nev;}
@@ -205,7 +205,6 @@ class vonat
     set<string> kocsik;
     int kocsi_kapacitas;
     map<int, string> menetrend;
-    string aktualis_allomas;
 //    map<string, map<string, int>> terkep;
 public:
     vonat(){}
@@ -235,8 +234,6 @@ public:
     {return kocsi_kapacitas;}
     map<int, string> get_menetrend()
     {return menetrend;}
-    string get_aktualis_allomas()
-    {return aktualis_allomas;}
     void kocsi_felcsatol(string kocsi)
     {
         kocsik.insert(kocsi);
@@ -245,31 +242,24 @@ public:
     {
         kocsik.erase(kocsik.find(kocsi));
     }
-    void mozgat(int ido)
-    {
-        if(menetrend.find(ido)!=menetrend.end())
-        {
-            aktualis_allomas=menetrend.find(ido)->second;
-        }
-    }
 };
 
-map<kocsi, string> kocsik_olvas(ifstream& f)
+vector<kocsi> kocsik_olvas(ifstream& f)
 {
-    map<kocsi, string> m;
+    vector<kocsi> v;
     kocsi k;
-    string a;
+    string n;
+    string h;
     int ka;
-    f>>a;
-    while(a!=";")
+    f>>n;
+    while(n!=";")
     {
         f>>ka;
-        k=kocsi(a, ka);
-        f>>a;
-        m[k]=a;
-        f>>a;
+        f>>h;
+        k=kocsi(n, ka, h);
+        f>>n;
     }
-    return m;
+    return v;
 }
 
 map<string, vonat> vonatok_olvas(ifstream& f, map<string, set<string>>& global)
@@ -315,16 +305,23 @@ map<string, vonat> vonatok_olvas(ifstream& f, map<string, set<string>>& global)
     return m;
 }
 
-vector<termek> termekek_olvas(ifstream& f)
+vector<pair<vector<string>, int>> termekek_olvas(ifstream& f)
 {
-    vector<termek> v;
+    vector<pair<vector<string>, int>> v;
     string n, fr, t;
+    pair<vector<string>, int> p;
+    vector<string> s;
     int q;
     f>>n;
     while(n!=";")
     {
         f>>fr>>t>>q;
-        v.push_back(termek(n, fr, t, q));
+        s.push_back(n);//első helyen név
+        s.push_back(fr);//2. honnan
+        s.push_back(t);//3. hova
+        p.first=s;
+        p.second=q;
+        v.push_back(p);
         f>>n;
     }
     return v;
@@ -332,24 +329,24 @@ vector<termek> termekek_olvas(ifstream& f)
 
 class vasuti_halozat_allapot
 {
-    map<string, vonat> vonatok;
     map<string, allomas> allomasok;
+    map<string, int> vonatok_toltottsege;//gyanús, hogy ez a kettő elég
+    vector<kocsi> kocsik;
     int ido;//meggondolandó
 public:
-    vasuti_halozat_allapot(map<string, vonat> _vonatok, map<string, allomas> _allomasok)
+    vasuti_halozat_allapot(map<string, allomas> _allomasok)
     {
-        vonatok=_vonatok;
         allomasok=_allomasok;
         ido=-1;//meggondolando
     }
     vasuti_halozat_allapot(string file="teszt.txt")
     {
+        map<string, vonat> vonatok;
         map<string, set<string>> global_terkep;
         map<string, map<int, string>> menetrendek;
         map<string, int> vonatok_kocsikapacitasa;
         ifstream f(file);
-        map<kocsi, string> _kocsik;
-        vector<termek> _termekek;
+        vector<pair<vector<string>, int>> _termekek;
         if(f.fail())
         {
             cerr<<"File olvasasi hiba!"<<endl;
@@ -357,7 +354,7 @@ public:
         else
         {
             vonatok=vonatok_olvas(f, global_terkep);
-            _kocsik=kocsik_olvas(f);
+            kocsik=kocsik_olvas(f);
             _termekek=termekek_olvas(f);
             f.close();
             for(auto a:global_terkep)
@@ -402,14 +399,22 @@ class database
     map<string, int> vonatok_kocsikapacitasa;
     map<string, int> kocsik_arukapacitasa;
     vasuti_halozat_allapot cel;
-
+public:
+    database(map<string, set<string>> _terkep, map<string, map<int, string>> _menetrendek, map<string, int> _vonatok_kocsikapacitasa, map<string, int> _kocsik_arukapacitasa, vasuti_halozat_allapot _cel)
+    {
+        terkep=_terkep;
+        menetrendek=_menetrendek;
+        vonatok_kocsikapacitasa=_vonatok_kocsikapacitasa;
+        kocsik_arukapacitasa=_kocsik_arukapacitasa;
+        cel=_cel;
+    }
 };
 
 int main()
 {
     vasuti_halozat_allapot k;
     termek t("cucc1", "Budapest", "Hatvan", 10);
-    kocsi k1("a_kocsi", 10);
+    kocsi k1("a_kocsi", 10, "Budapest");
     allomas a("Budapest");
     a.kocsi_hozzaad(k1);
 //    k1.felpakol({t});
