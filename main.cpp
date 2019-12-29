@@ -202,6 +202,7 @@ map<string, pair<int, map<int, string>>> vonatok_olvas(ifstream& f, map<string, 
             idopontok.push_back(i);
         }
         p1.second=p2;
+        p2.second.clear();
         m.insert(p1);
         for(size_t j=0;j<allomasok.size();j++)
         {
@@ -314,17 +315,30 @@ void termekvalogatas(vector<pair<vector<string>, int>>& termekek, map<string, se
 //    }
 }
 
+ostream& operator<<(ostream& out, map<string, vector<string>>& m)
+{
+    for(auto p1:m)
+    {
+        out<<p1.first<<endl;
+        for(int i=0;i<p1.second.size();i++)
+        {
+            out<<"\t"<<i<<" "<<p1.second[i]<<endl;
+        }
+    }
+    return out;
+}
+
 class database
 {
     map<string, set<string>> terkep;
-    map<string, map<int, string>> menetrendek;//átgondolandó
+    map<string, vector<string>> menetrendek;//átgondolandó
     map<string, map<int, vector<string>>> vonatok_adott_allomason;
     map<string, int> vonatok_kocsikapacitasa;
     map<string, int> kocsik_arukapacitasa;
     map<string, allomas> cel;
 public:
     database(){};
-    database(map<string, set<string>> _terkep, map<string, map<int, string>> _menetrendek, map<string, int> _vonatok_kocsikapacitasa, map<string, int> _kocsik_arukapacitasa, map<string, allomas> _cel)
+    database(map<string, set<string>> _terkep, map<string, vector<string>> _menetrendek, map<string, int> _vonatok_kocsikapacitasa, map<string, int> _kocsik_arukapacitasa, map<string, allomas> _cel)
     {
         terkep=_terkep;
         menetrendek=_menetrendek;
@@ -333,15 +347,15 @@ public:
         cel=_cel;
         for(auto p1:menetrendek) //vannak bajok
         {
-            for(auto p2:p1.second)
+            for(int i=0;i<p1.second.size();i++)
             {
-                if(vonatok_adott_allomason.find(p2.second)==vonatok_adott_allomason.end())
+                if(vonatok_adott_allomason.find(p1.second[i])==vonatok_adott_allomason.end())
                 {
-                    vonatok_adott_allomason[p2.second].insert(pair<int,vector<string>>(p2.first, {p1.first}));
+                    vonatok_adott_allomason[p1.second[i]].insert(pair<int,vector<string>>(i, {p1.first}));
                 }
                 else
                 {
-                    vonatok_adott_allomason[p2.second][p2.first].push_back(p1.first);
+                    vonatok_adott_allomason[p1.second[i]][i].push_back(p1.first);
                 }
             }
         }
@@ -361,7 +375,7 @@ public:
         }
     }
     string get_vonat_allomas(string vonat, int ido)
-    {return menetrendek[vonat][ido%menetrendek[vonat].size()];}//nem teljesen jó
+    {return menetrendek[vonat][ido%menetrendek[vonat].size()];}
     int get_vonat_kocsikapacitas(string vonat)
     {return vonatok_kocsikapacitasa[vonat];}
     bool cel_e(map<string, allomas>& c)
@@ -429,7 +443,7 @@ public:
     vasuti_halozat(database d, string file="teszt.txt")
     {
         map<string, set<string>> global_terkep;
-        map<string, map<int, string>> menetrendek;
+        map<string, vector<string>> menetrendek;
         map<string, int> vonatok_kocsikapacitasa;
         map<string, int> kocsik_arukapacitasa;
         ifstream f(file);
@@ -447,10 +461,27 @@ public:
             {
                 vonatok_toltottsege.insert(pair<string, int>(p.first, 0));
                 vonatok_kocsikapacitasa.insert(pair<string, int>(p.first, p.second.first));
-            }
-            for(auto p:vonatok)
-            {
-                menetrendek.insert(pair<string, map<int, string>>(p.first, p.second.second));
+                auto vend=p.second.second.end();
+                --vend;
+                int menetrendeksize=vend->first;
+                for(int i=0;i<=menetrendeksize;i++)
+                {
+                    if(p.second.second.find(i)==p.second.second.end())
+                    {
+                        if(i<p.second.second.begin()->first)
+                        {
+                            menetrendek[p.first].push_back(p.second.second.begin()->second);
+                        }
+                        else
+                        {
+                            menetrendek[p.first].push_back(menetrendek[p.first][i-1]);
+                        }
+                    }
+                    else
+                    {
+                        menetrendek[p.first].push_back(p.second.second.find(i)->second);
+                    }
+                }
             }
             for(auto p:_kocsik)
             {
