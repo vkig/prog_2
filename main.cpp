@@ -5,59 +5,39 @@
 #include <map>
 #include <set>
 #include <queue>
+#include <dir.h>
 #include <functional>
+#include <list>
+#include <algorithm>
 
 using namespace std;
 
-class vasuti_halozat_allapot;
+class database;
 
-class termek
+int lkkt(set<int>& v)
 {
-    string nev, honnan, hova;
-    int mennyiseg;
-public:
-    termek(){}
-    termek(string _nev, string _honnan, string _hova, int _mennyiseg)
-    {
-        nev=_nev;
-        honnan=_honnan;//hibás meggondolás
-        hova=_hova;//hibás meggondolás következménye
-        mennyiseg=_mennyiseg;
-    }
-    string get_nev()
-    {return nev;}
-    string get_honnan()
-    {return honnan;}
-    string get_hova()
-    {return hova;}
-    int get_mennyiseg()
-    {return mennyiseg;}
-    void mennyiseg_modosit(int _mennyiseg)
-    {mennyiseg=_mennyiseg;}
-};
-
-//ostream& operator<<(ostream& out, termek t)
-//{
-//    out<<"Termek_nev: "<<t.get_nev()<<", kiindulo allomas: "<<t.get_honnan()<<", celallomas: "<<t.get_hova()<<", mennyiseg: "<<t.get_mennyiseg()<<endl;
-//    return out;
-//}
+    
+}
 
 class kocsi
 {
     string nev;
     int toltottseg;
     map<string, int> rakomany;
-    int rakomany_merete;
     pair<bool, string> hely;//false, ha allomason van, true, ha vonaton
 public:
     kocsi(){}
-    kocsi(string _nev, int _kapacitas)
+    kocsi(string _nev, string _kiindulo_pont)
     {
         nev=_nev;
         toltottseg=0;
+        hely.first=false;
+        hely.second=_kiindulo_pont;
     }
     string get_nev()
     {return nev;}
+    string get_hely()
+    {return hely.second;}
 //    int get_aktualis_kapacitas()
 //    {return (kapacitas-toltottseg);}
     bool csatlakoztatva_e()
@@ -109,7 +89,16 @@ public:
     }
     bool operator<(const kocsi& a)const
     {
-        if(nev<a.nev)
+        if(nev!=a.nev)
+           {return nev<a.nev;}
+        else if(rakomany!=a.rakomany)
+        {return rakomany<a.rakomany;}
+        else
+            return hely<a.hely;
+    }
+    bool operator==(kocsi a)const
+    {
+        if(a.nev==nev && a.hely==hely && a.rakomany==rakomany)
             return true;
         return false;
     }
@@ -123,156 +112,78 @@ ostream& operator<<(ostream& out, kocsi k)
     return out;
 }
 
-struct allomas
+class allomas
 {
     string nev;
-//    map<string, termek> termekek;
-    set<kocsi> kocsik;
-    set<string> vonatok;
+    map<string, int> termekek;
 public:
+    allomas(){};
     allomas(string _nev)
     {
         nev=_nev;
     }
     string get_name()
-        {return nev;}
-    bool operator<(const allomas& a)const
-    {
-        if(nev<a.nev)
-            return true;
-        return false;
-    }
-//    void termek_lerak(termek _termek)//nevek kitalálása
-//    {
-//        termekek.insert(pair<string, termek>(_termek.get_nev(), _termek));
-//    }
-    void kocsi_hozzaad(kocsi _kocsi)
-    {
-        kocsik.insert(_kocsi);
-    }
-//    void termek_felpakol(termek _termek)
-//    {
-//        termekek.find(_termek.get_nev())->second.mennyiseg_modosit(termekek.find(_termek.get_nev())->second.get_mennyiseg()+_termek.get_mennyiseg());//itt tartok
-//    }
-    void vonat_beerkezik(string _vonat)
-    {
-        vonatok.insert(_vonat);
-    }
-    void vonat_elmegy(string _vonat)
-    {
-        vonatok.erase(vonatok.find(_vonat));
-    }
-};
-
-ostream& operator<<(ostream& out, allomas a)
-{
-    out<<"Allomas nev: "<<a.get_name()<<endl;
-    if(a.vonatok.size()>0)
-    {
-        out<<"\t Vonatok az allomason: ";
-        for(auto b:a.vonatok)
-        {
-            out<<b<<"  ";
-        }
-        out<<endl;
-    }
-    if(a.kocsik.size()>0)
-    {
-        out<<"\t Kocsik az allomason: ";
-        for(auto b:a.kocsik)
-        {
-            out<<b.get_nev()<<"  ";
-        }
-        out<<endl;
-    }
-//    if(a.termekek.size()>0)
-//    {
-//        out<<"\t Termekek az allomason: ";
-//        for(auto b:a.termekek)
-//        {
-//            out<<b.first<<"  ";
-//        }
-//        out<<endl;
-//    }
-    return out;
-}
-
-class vonat
-{
-    string nev;
-    set<string> kocsik;
-    int kocsi_kapacitas;
-    map<int, string> menetrend;
-    string aktualis_allomas;
-//    map<string, map<string, int>> terkep;
-public:
-    vonat(){}
-    vonat(string _nev, int _kocsi_kapacitas)
-    {
-        nev=_nev;
-        kocsi_kapacitas=_kocsi_kapacitas;
-    }
-    bool menetrend_hozzaadas(vector<int>& idopontok, vector<string>& allomasok)
-    {
-        if(idopontok.size()==allomasok.size())
-        {
-            menetrend.clear();
-            for(size_t i=0;i<idopontok.size();i++)
-            {
-                menetrend.insert(pair<int, string>(idopontok[i], allomasok[i]));
-            }
-            return true;
-        }
-        return false;
-    }
-    string get_nev()
     {return nev;}
-    set<string> get_kocsik()
-    {return kocsik;}
-    int get_kapacitas()
-    {return kocsi_kapacitas;}
-    map<int, string> get_menetrend()
-    {return menetrend;}
-    string get_aktualis_allomas()
-    {return aktualis_allomas;}
-    void kocsi_felcsatol(string kocsi)
+    map<string, int> get_termekek()
+    {return termekek;}
+    void termek_lerak(string termek_neve, int termek_mennyisege)
     {
-        kocsik.insert(kocsi);
-    }
-    void kocsi_lecsatol(string kocsi)
-    {
-        kocsik.erase(kocsik.find(kocsi));
-    }
-    void mozgat(int ido)
-    {
-        if(menetrend.find(ido)!=menetrend.end())
+        if(termekek.find(termek_neve)==termekek.end())
         {
-            aktualis_allomas=menetrend.find(ido)->second;
+            termekek[termek_neve]=termek_mennyisege;
         }
+        else
+        {
+            termekek[termek_neve]+=termek_mennyisege;
+        }
+    }
+    void termek_kivesz(string termek_neve, int termek_mennyisege)
+    {
+        termekek[termek_neve]-=termek_mennyisege;
+    }
+    bool operator<(allomas a)const
+    {
+        if(nev!=a.get_name())
+        {return nev<a.get_name();}
+        else
+        {return termekek<a.get_termekek();}
+    }
+    bool operator==(allomas a)const
+    {
+        if(nev==a.get_name() && termekek==a.get_termekek())
+            return true;
+        return false;
     }
 };
 
-map<kocsi, string> kocsik_olvas(ifstream& f)
+map<string, pair<kocsi, int>> kocsik_olvas(ifstream& f)
 {
-    map<kocsi, string> m;
+    map<string, pair<kocsi, int>> m;
+    pair<kocsi, int> p;
     kocsi k;
-    string a;
+    string n;
+    string h;
     int ka;
-    f>>a;
-    while(a!=";")
+    f>>n;
+    while(n!=";")
     {
         f>>ka;
-        k=kocsi(a, ka);
-        f>>a;
-        m[k]=a;
-        f>>a;
+        f>>h;
+        k=kocsi(n, h);
+        p.first=k;
+        p.second=ka;
+        m.insert(pair<string, pair<kocsi, int>>(n, pair<kocsi, int>(k, ka)));
+        f>>n;
     }
     return m;
 }
 
-map<string, vonat> vonatok_olvas(ifstream& f, map<string, set<string>>& global)
+map<string, pair<int, map<int, string>>> vonatok_olvas(ifstream& f, map<string, set<string>>& global)
 {
-    map<string, vonat> m;
+    map<string, pair<int, map<int, string>>> m;
+    pair<string, pair<int, map<int, string>>> p1;
+    pair<int, map<int, string>> p2;
+    map<int, string> menet;
     vector<string> allomasok;
     vector<int> idopontok;
     string n;
@@ -285,15 +196,19 @@ map<string, vonat> vonatok_olvas(ifstream& f, map<string, set<string>>& global)
     {
         f>>db;
         f>>k;
+        p1.first=n;
+        p2.first=k;
         for(int j=0;j<db;j++)
         {
             f>>s;
             f>>i;
+            p2.second.insert(pair<int, string>(i, s));
             allomasok.push_back(s);
             idopontok.push_back(i);
         }
-        vonat v(n, k);
-        v.menetrend_hozzaadas(idopontok, allomasok);
+        p1.second=p2;
+        p2.second.clear();
+        m.insert(p1);
         for(size_t j=0;j<allomasok.size();j++)
         {
             if(global.find(allomasok[j])==global.end())
@@ -307,79 +222,388 @@ map<string, vonat> vonatok_olvas(ifstream& f, map<string, set<string>>& global)
         }
         allomasok.clear();
         idopontok.clear();
-        m[n]=v;
         f>>n;
     }
     return m;
 }
 
-vector<termek> termekek_olvas(ifstream& f)
+vector<pair<vector<string>, int>> termekek_olvas(ifstream& f)
 {
-    vector<termek> v;
+    vector<pair<vector<string>, int>> v;
     string n, fr, t;
+    pair<vector<string>, int> p;
+    vector<string> s;
     int q;
     f>>n;
     while(n!=";")
     {
         f>>fr>>t>>q;
-        v.push_back(termek(n, fr, t, q));
+        s.push_back(n);//első helyen név
+        s.push_back(fr);//2. honnan
+        s.push_back(t);//3. hova
+        p.first=s;
+        p.second=q;
+        v.push_back(p);
+        s.clear();
         f>>n;
     }
+//    for(int i=0;i<v.size();i++)
+//    {
+//        for(int j=0;j<v[i].first.size();j++)
+//        {
+//            cout<<v[i].first[j]<<" ";
+//        }
+//        cout<<"\t"<<v[i].second<<endl;
+//    }
     return v;
 }
 
-class vasuti_halozat_allapot
+bool from_to_check(string from, string to, map<string, set<string>>& terkep)
 {
-    map<string, vonat> vonatok;
-    map<string, allomas> allomasok;
-    int ido;//meggondolandó
-public:
-    vasuti_halozat_allapot(map<string, vonat> _vonatok, map<string, allomas> _allomasok)
+    if(terkep.find(from)==terkep.end())
+        return false;
+    list<vector<string>> lista;
+    lista.push_back({from});
+    bool stop=false;
+    while(!stop)
     {
-        vonatok=_vonatok;
-        allomasok=_allomasok;
-        ido=-1;//meggondolando
+        if(lista.size()==0)
+        {
+            return false;
+        }
+        vector<string> aktualis_utvonal=*lista.begin();
+        lista.erase(lista.begin());
+        string aktualis_allomas=aktualis_utvonal[aktualis_utvonal.size()-1];
+        map<string, set<string>>::iterator it=terkep.find(aktualis_allomas);
+        if(it!=terkep.end() && it->second.size()>0)
+        {
+            for(string s:it->second)
+            {
+                if(find(aktualis_utvonal.begin(), aktualis_utvonal.end(), s)==aktualis_utvonal.end())
+                {
+                    auto v=aktualis_utvonal;
+                    v.push_back(s);
+                    lista.push_back(v);
+                    if(s==to)
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
     }
-    vasuti_halozat_allapot(string file="teszt.txt")
+    return false;
+}
+
+void termekvalogatas(vector<pair<vector<string>, int>>& termekek, map<string, set<string>>& terkep)
+{
+    vector<vector<pair<vector<string>, int>>::iterator> torlendo;
+    for(auto it=termekek.begin();it!=termekek.end();++it)
+    {
+        if(!from_to_check(it->first[1], it->first[2], terkep))
+        {
+            cout<<"Informacio: "<<it->first[1]<<" helyrol, "<<it->first[2]<<" helyre nem lehet eljuttatni "<<it->first[0]<<" termeket."<<endl;
+            torlendo.push_back(it);
+        }
+    }
+    for(auto it:torlendo)
+    {
+        termekek.erase(it);
+    }
+//    for(int i=0;i<termekek.size();i++)
+//    {
+//        for(int j=0;j<termekek[i].first.size();j++)
+//        {
+//            cout<<termekek[i].first[j]<<" ";
+//        }
+//        cout<<"\t"<<termekek[i].second<<endl;
+//    }
+}
+
+ostream& operator<<(ostream& out, map<string, vector<string>>& m)
+{
+    for(auto p1:m)
+    {
+        out<<p1.first<<endl;
+        for(size_t i=0;i<p1.second.size();i++)
+        {
+            out<<"\t"<<i<<" "<<p1.second[i]<<endl;
+        }
+    }
+    return out;
+}
+
+class database
+{
+    map<string, set<string>> terkep;
+    map<string, vector<string>> menetrendek;//átgondolandó
+    map<string, map<int, vector<string>>> vonatok_adott_allomason;
+    map<string, int> vonatok_kocsikapacitasa;
+    map<string, int> kocsik_arukapacitasa;
+    map<string, allomas> cel;
+public:
+    database(){};
+    database(map<string, set<string>> _terkep, map<string, vector<string>> _menetrendek, map<string, int> _vonatok_kocsikapacitasa, map<string, int> _kocsik_arukapacitasa, map<string, allomas> _cel)
+    {
+        terkep=_terkep;
+        menetrendek=_menetrendek;
+        vonatok_kocsikapacitasa=_vonatok_kocsikapacitasa;
+        kocsik_arukapacitasa=_kocsik_arukapacitasa;
+        cel=_cel;
+        for(auto p1:menetrendek) //vannak bajok
+        {
+            for(size_t i=0;i<p1.second.size();i++)
+            {
+                if(vonatok_adott_allomason.find(p1.second[i])==vonatok_adott_allomason.end())
+                {
+                    vonatok_adott_allomason[p1.second[i]].insert(pair<int,vector<string>>(i, {p1.first}));
+                }
+                else
+                {
+                    vonatok_adott_allomason[p1.second[i]][i].push_back(p1.first);
+                }
+            }
+        }
+        for(auto p1:vonatok_adott_allomason)
+        {
+            cout<<p1.first<<endl;
+            for(auto p2:p1.second)
+            {
+                cout<<"\t"<<p2.first<<"\t";
+                for(auto p3:p2.second)
+                {
+                    cout<<p3<<" ";
+                }
+                cout<<endl;
+            }
+            cout<<endl;
+        }
+    }
+    string get_vonat_allomas(string vonat, int ido)
+    {return menetrendek[vonat][ido%menetrendek[vonat].size()];}
+    int get_vonat_kocsikapacitas(string vonat)
+    {return vonatok_kocsikapacitasa[vonat];}
+    bool cel_e(map<string, allomas>& c)
+    {
+        if(c==cel)
+            return true;
+        return false;
+    }
+    int get_kocsi_arukapacitasa(string kocsi)
+    {return kocsik_arukapacitasa[kocsi];}
+    vector<string> get_vonatok_allomason(string allomas, int ido)
+    {
+        auto it=vonatok_adott_allomason[allomas].find(ido);
+        if(it==vonatok_adott_allomason[allomas].end())
+            return vector<string>({""});
+        else
+            return it->second;
+    }
+};
+
+ostream& operator<<(ostream& out, map<string, set<string>>& t)
+{
+    for(auto a:t)
+    {
+        out<<a.first<<endl;
+        for(auto b:a.second)
+        {
+            out<<"\t"<<b<<" ";
+        }
+        out<<endl;
+    }
+    return out;
+}
+
+ostream& operator<<(ostream& out, map<string, allomas>& a)
+{
+    for(auto p:a)
+    {
+        out<<p.first<<":"<<endl;
+        for(auto b:p.second.get_termekek())
+        {
+            out<<"\t"<<b.first<<"\t"<<b.second<<endl;
+        }
+    }
+    return out;
+}
+
+class vasuti_halozat
+{
+    map<string, allomas> allomasok;
+    map<string, int> vonatok_toltottsege;//valszeg ez sem kell
+    map<string, kocsi> kocsik;
+public:
+    vasuti_halozat(map<string, allomas> _allomasok)
+    {
+        allomasok=_allomasok;
+    }
+    map<string, kocsi>& get_kocsik()
+    {return kocsik;}
+    map<string, allomas>& get_allomasok()
+    {return allomasok;}
+    map<string, int>& get_vonatok_toltottsege()
+    {return vonatok_toltottsege;}
+    vasuti_halozat(){};
+    vasuti_halozat(database d, string file="teszt.txt")
     {
         map<string, set<string>> global_terkep;
-        map<string, map<int, string>> menetrendek;
+        map<string, vector<string>> menetrendek;
         map<string, int> vonatok_kocsikapacitasa;
+        map<string, int> kocsik_arukapacitasa;
         ifstream f(file);
-        map<kocsi, string> _kocsik;
-        vector<termek> _termekek;
         if(f.fail())
         {
             cerr<<"File olvasasi hiba!"<<endl;
         }
         else
         {
-            vonatok=vonatok_olvas(f, global_terkep);
-            _kocsik=kocsik_olvas(f);
-            _termekek=termekek_olvas(f);
+            auto vonatok=vonatok_olvas(f, global_terkep);
+            auto _kocsik=kocsik_olvas(f);
+            auto _termekek=termekek_olvas(f);
             f.close();
-            for(auto a:global_terkep)
+            for(auto p:vonatok)
             {
-                cout<<a.first<<endl;
-                for(auto b:a.second)
+                vonatok_toltottsege.insert(pair<string, int>(p.first, 0));
+                vonatok_kocsikapacitasa.insert(pair<string, int>(p.first, p.second.first));
+                auto vend=p.second.second.end();
+                --vend;
+                int menetrendeksize=vend->first;
+                for(int i=0;i<=menetrendeksize;i++)
                 {
-                    cout<<"\t"<<b<<" ";
+                    if(p.second.second.find(i)==p.second.second.end())
+                    {
+                            menetrendek[p.first].push_back("NIS");
+                    }
+                    else
+                    {
+                        menetrendek[p.first].push_back(p.second.second.find(i)->second);
+                    }
                 }
-                cout<<endl;
             }
+            cout<<menetrendek;
+            for(auto p:_kocsik)
+            {
+                kocsik.insert(pair<string, kocsi>(p.second.first.get_nev(),p.second.first));
+                kocsik_arukapacitasa.insert(pair<string, int>(p.first, p.second.second));
+            }
+            termekvalogatas(_termekek, global_terkep);
+            map<string, allomas> cel;
+            for(auto p:global_terkep)
+            {
+                allomasok.insert(pair<string, allomas>(p.first, allomas(p.first)));
+                cel.insert(pair<string, allomas>(p.first, allomas(p.first)));
+            }
+            for(auto p:_termekek)
+            {
+                auto it1=cel.find(p.first[2]);
+                if(it1!=cel.end())
+                {
+                    it1->second.termek_lerak(p.first[0], p.second);
+                }
+                auto it2=allomasok.find(p.first[1]);
+                if(it2!=allomasok.end())
+                {
+                    it2->second.termek_lerak(p.first[0], p.second);
+                }
+            }
+            d=database(global_terkep, menetrendek, vonatok_kocsikapacitasa, kocsik_arukapacitasa, cel);
+            cout<<global_terkep;
+            cout<<allomasok;
+            cout<<cel;
         }
     }
-    set<vasuti_halozat_allapot> gyerekek_general()
+    bool operator<(const vasuti_halozat a)const
     {
-        set<vasuti_halozat_allapot> s;
-        //...
-        return s;
+        if(allomasok!=a.allomasok)
+        {    return allomasok<a.allomasok;}
+        else if(vonatok_toltottsege!=a.vonatok_toltottsege)
+        {    return vonatok_toltottsege<a.vonatok_toltottsege;}
+        else
+        {   return kocsik<a.kocsik;}
     }
-    bool operator<(vasuti_halozat_allapot a)
+    bool operator!=(const vasuti_halozat a)const
     {
-
+        if(allomasok!=a.allomasok && vonatok_toltottsege!=a.vonatok_toltottsege && kocsik!=a.kocsik)
+        {    return true;}
+        else
+            return false;
     }
 };
+
+
+
+struct vasuti_halozat_allapot
+{
+    vasuti_halozat node;
+    vector<vasuti_halozat> elozmenyek;
+    database d;
+    vasuti_halozat_allapot(database& _d, vasuti_halozat v)
+    {
+        node=v;
+        d=_d;
+    }
+    vector<vasuti_halozat_allapot> gyerekek_general()
+    {
+        vector<vasuti_halozat_allapot> v;
+        auto kocsik=node.get_kocsik();
+        auto allomasok=node.get_allomasok();
+        auto toltottseg=node.get_vonatok_toltottsege();
+        for(auto k:kocsik)
+        {
+            if(k.second.csatlakoztatva_e())
+            {
+                vasuti_halozat_allapot uj(*this);
+                uj.elozmenyek.push_back(this->node);
+                auto k1=find(uj.node.get_kocsik().begin(), uj.node.get_kocsik().end(), k);
+                k1->second.lecsatol(d.get_vonat_allomas(k.second.get_hely(), elozmenyek.size()));
+                v.push_back(uj);
+            }
+            if(!k.second.csatlakoztatva_e())
+            {
+
+            }
+
+        }
+        return v;
+    }
+};
+
+template<typename T>
+class NodeSet {
+    set<T> t;
+public:
+    T pop_max() {
+        auto it_max = t.begin();
+        for (auto it=t.begin();it!=t.end();it++) {
+            if (value(*it) > value(*it_max)) {
+                it_max = it;
+            }
+        }
+        T res = *it_max;
+        t.erase(it_max);
+        return res;
+    }
+    void put(T a) {
+    t.insert(a);
+    }
+    int size() const {
+        return t.size();
+    }
+//    void dump(ostream &out = cout) {
+//        for (auto it=t.begin();it!=t.end();it++) {
+//            out << *it;
+//        }
+//    }
+};
+
+bool operator<(vasuti_halozat_allapot a, vasuti_halozat_allapot b)
+{
+    if(a.node!=b.node)
+        return a.node<b.node;
+    else
+        return a.elozmenyek<b.elozmenyek;
+}
 
 double heur(vasuti_halozat_allapot& node)
 {
@@ -387,30 +611,15 @@ double heur(vasuti_halozat_allapot& node)
     return 1;
 }
 
-struct vasuti_halozat_graf
-{
-    priority_queue<vasuti_halozat_allapot, vector<vasuti_halozat_allapot>, std::function<bool(vasuti_halozat_allapot, vasuti_halozat_allapot)>> q;
-//    auto cmp=([](vasuti_halozat_allapot left, vasuti_halozat_allapot right){return heur(left)<heur(right);});
-};
 
-class database
-{
-    map<string, set<string>> terkep;
-    map<string, map<int, string>> menetrendek;
-    map<string, int> vonatok_kocsikapacitasa;
-    map<string, int> kocsik_arukapacitasa;
-    vasuti_halozat_allapot cel;
-
-};
+//priority_queue<vasuti_halozat_allapot, vector<vasuti_halozat_allapot>, std::function<bool(vasuti_halozat_allapot, vasuti_halozat_allapot)>> q;
+////    auto cmp=([](vasuti_halozat_allapot left, vasuti_halozat_allapot right){return heur(left)<heur(right);});
 
 int main()
 {
-    vasuti_halozat_allapot k;
-    termek t("cucc1", "Budapest", "Hatvan", 10);
-    kocsi k1("a_kocsi", 10);
-    allomas a("Budapest");
-    a.kocsi_hozzaad(k1);
-//    k1.felpakol({t});
-    cout<<k1<<a;
+    database d;
+    vasuti_halozat k(d);
+    vasuti_halozat_allapot a(d, k);
+
     return 0;
 }
