@@ -12,6 +12,8 @@
 
 using namespace std;
 
+bool stop=false;
+
 class database;
 //lkkt seged
 int fv(int a, int b)
@@ -104,7 +106,7 @@ public:
 //                }
 //                else
 //                {
-//                    return false;//visszatÈrhetnÈnk azzal, amit nem tudtunk bepakolni
+//                    return false;//visszat√©rhetn√©nk azzal, amit nem tudtunk bepakolni
 //                }
 //            }
 //            return true;
@@ -215,10 +217,18 @@ public:
         {
             termekek[termek_neve]+=termek_mennyisege;
         }
+        if(termekek[termek_neve]==0)
+        {
+            termekek.erase(termekek.find(termek_neve));
+        }
     }
     void termek_elvisz(string termek_neve, int termek_mennyisege)
     {
         termekek[termek_neve]-=termek_mennyisege;
+        if(termekek[termek_neve]==0)
+        {
+            termekek.erase(termekek.find(termek_neve));
+        }
     }
     bool operator<(allomas a)const
     {
@@ -321,7 +331,7 @@ vector<pair<vector<string>, int>> termekek_olvas(ifstream& f)
     while(n!=";")
     {
         f>>fr>>t>>q;
-        s.push_back(n);//elsı helyen nÈv
+        s.push_back(n);//els√µ helyen n√©v
         s.push_back(fr);//2. honnan
         s.push_back(t);//3. hova
         p.first=s;
@@ -449,7 +459,7 @@ void kocsivalogatas(vector<set<string>>& resz,map<string, pair<kocsi, int>> &koc
                 }
                 for(auto it:torlendo_kocsik)
                 {
-                    cout<<"A(z) "<<it->first<<" nevu vonat nem lat el funkciot, ezert toroltuk."<<endl;
+                    cout<<"A(z) "<<it->first<<" nevu kocsi nem lat el funkciot, ezert toroltuk."<<endl;
                     kocsik.erase(it);
                 }
                 //terkep torlese
@@ -540,7 +550,7 @@ ostream& operator<<(ostream& out, map<string, vector<string>>& m)
 class database
 {
     map<string, set<string>> terkep;
-    map<string, vector<string>> menetrendek;//·tgondolandÛ
+    map<string, vector<string>> menetrendek;//√°tgondoland√≥
     map<string, map<int, vector<string>>> vonatok_adott_allomason;
     map<string, int> vonatok_kocsikapacitasa;
     map<string, int> kocsik_arukapacitasa;
@@ -644,9 +654,9 @@ public:
     }
     vector<string> get_vonatok_allomason(string allomas, int ido)
     {
-        auto it=vonatok_adott_allomason[allomas].find(ido);
+        auto it=vonatok_adott_allomason[allomas].find(ido%lkkt_k[allomas]);
         if(it==vonatok_adott_allomason[allomas].end())
-            return vector<string>({""});
+            return vector<string>();
         else
             return it->second;
     }
@@ -828,7 +838,7 @@ public:
     }
     bool operator!=(const vasuti_halozat a)const
     {
-        if(allomasok!=a.allomasok && vonatok_toltottsege!=a.vonatok_toltottsege && kocsik!=a.kocsik)
+        if(allomasok!=a.allomasok || vonatok_toltottsege!=a.vonatok_toltottsege || kocsik!=a.kocsik)
         {
             return true;
         }
@@ -871,13 +881,13 @@ struct vasuti_halozat_allapot
     vector<vector<pair<string,vector<pair<char,string>>>>> osszepakol(map<string,set<vector<pair<char,string>>>> lehetseges_akciok)
     {
         vector<vector<pair<string,vector<pair<char,string>>>>>osszes_megoldas;
-        //÷sszesen h·ny fÈle kell hogy legyen
+        //√ñsszesen h√°ny f√©le kell hogy legyen
         int szorzat = 1;
         for(auto i:lehetseges_akciok)
         {
             szorzat *= i.second.size();
         }
-        //LEHETS…GES KOMBIN¡CI”K SZ¡MÕT¡SA
+        //LEHETS√âGES KOMBIN√ÅCI√ìK SZ√ÅM√çT√ÅSA
         vector<int> hol_tartok(lehetseges_akciok.size(),0);
         while(osszes_megoldas.size() != szorzat)
         {
@@ -885,7 +895,7 @@ struct vasuti_halozat_allapot
             for(int i=0; i<hol_tartok.size(); i++)
             {
                 //Map i-edig eleme kell
-                //NEM V…GLEGES
+                //NEM V√âGLEGES
                 int j=0;
                 set<vector<pair<char,string>>>m;
                 string m2;
@@ -907,7 +917,7 @@ struct vasuti_halozat_allapot
             osszes_megoldas.push_back(megoldas);
             for(int i=lehetseges_akciok.size()-1; i!=-1; i--)
             {
-                //NEM V…GLEGES
+                //NEM V√âGLEGES
                 int j=0;
                 int merete=0;
                 for(auto a:lehetseges_akciok)
@@ -965,7 +975,7 @@ struct vasuti_halozat_allapot
             //VONATON VAN
             if(k.second.csatlakoztatva_e())
             {
-                //‹RES
+                //√úRES
                 if(k.second.get_toltottseg()==0)
                 {
                     //JAR ITT MASIK VONAT IS
@@ -995,6 +1005,7 @@ struct vasuti_halozat_allapot
                         //lecsatol-felpakol
                         for(auto a:allomasok[k.second.get_hely()].get_termekek())
                         {
+
                             lehetseges_akciok[k.first].insert(vector<pair<char, string>>({pair<char, string>('a',"0"), pair<char, string>('d', a.first)}));
 
 
@@ -1026,8 +1037,11 @@ struct vasuti_halozat_allapot
                         {
                             for(auto a:allomasok[k.second.get_hely()].get_termekek())
                             {
+                                if((d.get_kocsi_arukapacitasa(k.first)-k.second.get_toltottseg())>0){
+                                    //cout<<"KKKKKKKKKKKKKKKKKKKK"<<(d.get_kocsi_arukapacitasa(k.first)-k.second.get_toltottseg())<<endl;
                                 lehetseges_akciok[k.first].insert(vector<pair<char, string>>({pair<char, string>('a',"0"), pair<char, string>('d', a.first)}));
-                            }
+                                }
+                             }
                         }
                         //lecsatol-lepakol
                         for(auto i:k.second.get_rakomany())
@@ -1049,8 +1063,12 @@ struct vasuti_halozat_allapot
                             {
                                 for(auto b:allomasok[k.second.get_hely()].get_termekek())
                                 {
+                                    if((i.second+d.get_kocsi_arukapacitasa(k.first)-k.second.get_toltottseg())>0){
+                                        //cout<<"KKKKKKKKKKKKKKKKKKKK"<<(d.get_kocsi_arukapacitasa(k.first)-k.second.get_toltottseg())<<endl;
                                     lehetseges_akciok[k.first].insert(vector<pair<char, string>>({pair<char, string>('a',"0"), pair<char, string>('c', i.first), pair<char, string>('d', b.first)}));
-                                }
+
+                                    }
+                                 }
                             }
                         }
 
@@ -1058,31 +1076,37 @@ struct vasuti_halozat_allapot
                     }
                     //VAN TERMEK A KOCSIN AMINEK EZ A HELY A CELJA
                     //lecsatol-lepakol
-                    for(auto a:d.get_cel()[k.second.get_hely()].get_termekek())//celban itt levo termekek
+                    cout<<d.get_cel()[d.get_vonat_allomas(k.second.get_hely(),elozmenyek.size())].get_termekek()["cucc1"];
+                    map<string, int> mapa=d.get_cel()[d.get_vonat_allomas(k.second.get_hely(),elozmenyek.size())].get_termekek();
+                    for(auto a:(d.get_cel()[d.get_vonat_allomas(k.second.get_hely(),elozmenyek.size())].get_termekek()))//celban itt levo termekek
                     {
-                        if(k.second.get_rakomany().find(a.first)!=k.second.get_rakomany().end() && a.second>allomasok[k.second.get_hely()].get_termekek()[a.first])
+                        if(k.second.get_rakomany().find(a.first)!=k.second.get_rakomany().end() && a.second>allomasok[d.get_vonat_allomas(k.second.get_hely(),elozmenyek.size())].get_termekek()[a.first])
                         {
                             lehetseges_akciok[k.first].insert(vector<pair<char, string>>({pair<char, string>('a',"0"), pair<char, string>('z', a.first)}));
                             //+felcsatol
-                            if(d.get_vonatok_allomason(k.second.get_hely(), elozmenyek.size()).size()>1)
+                            if(d.get_vonatok_allomason(d.get_vonat_allomas(k.second.get_hely(),elozmenyek.size()), elozmenyek.size()).size()>1)
                             {
-                                for(auto p:d.get_vonatok_allomason(k.second.get_hely(), elozmenyek.size()))
+                                for(auto p:d.get_vonatok_allomason(d.get_vonat_allomas(k.second.get_hely(),elozmenyek.size()), elozmenyek.size()))
                                 {
                                     if(p!=k.second.get_hely())
                                     {
+                                        cout<<"----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------"<<endl;
                                         lehetseges_akciok[k.first].insert(vector<pair<char, string>>({pair<char, string>('a',"0"), pair<char, string>('z', a.first), pair<char, string>('b', p)}));
                                     }
                                 }
                             }
                             //+felpakol
-                            if(allomasok[k.second.get_hely()].termek_mennyiseg()!=0)
+                            if(allomasok[d.get_vonat_allomas(k.second.get_hely(),elozmenyek.size())].termek_mennyiseg()!=0)
                             {
-                                for(auto b:allomasok[k.second.get_hely()].get_termekek())
+                                for(auto b:allomasok[d.get_vonat_allomas(k.second.get_hely(),elozmenyek.size())].get_termekek())
                                 {
+
+                                    if((d.get_kocsi_arukapacitasa(k.first)-k.second.get_toltottseg())>0){
+                                        cout<<"KKKKKKKKKKKKKKKKKKKK"<<(d.get_kocsi_arukapacitasa(k.first)-k.second.get_toltottseg())<<endl;
                                     lehetseges_akciok[k.first].insert(vector<pair<char, string>>({pair<char, string>('a',"0"), pair<char, string>('z', a.first), pair<char, string>('d', b.first)}));
+                                    }
                                 }
                             }
-
                         }
                     }
 
@@ -1108,7 +1132,10 @@ struct vasuti_halozat_allapot
                 {
                     for(auto a:allomasok[k.second.get_hely()].get_termekek())
                     {
+                        if((d.get_kocsi_arukapacitasa(k.first)-k.second.get_toltottseg())>0){
+                            //cout<<"KKKKKKKKKKKKKKKKKKKK"<<(d.get_kocsi_arukapacitasa(k.first)-k.second.get_toltottseg())<<endl;
                         lehetseges_akciok[k.first].insert(vector<pair<char, string>> {pair<char, string>('d', a.first)});
+                        }
 
                     }
                 }
@@ -1160,21 +1187,22 @@ struct vasuti_halozat_allapot
                     //lepakol(celbajovot)
                     if(egy_kocsi.second[i].first=='z')
                     {
-                        for(auto a2:d.get_cel()[d.get_vonat_allomas(k1->second.get_hely(), uj.elozmenyek.size())].get_termekek())//celban itt levo termekek
+                        for(auto a2:(d.get_cel()[k1->second.get_hely()].get_termekek()))//celban itt levo termekek
                         {
                             if(k1->second.get_rakomany().find(a2.first)!=k1->second.get_rakomany().end() && a2.second>allomasok[k1->second.get_hely()].get_termekek()[a2.first])
                             {
                                 //tobb kell mint ami a kocsin van
-                                if((a2.second-allomasok[k1->second.get_hely()].get_termekek()[a2.first])>k1->second.get_rakomany().find(a2.first)->second)
+                                stop=true;
+                                cout<<"EZT KERESSUK________________________________________________________: "<<((a2.second-allomasok[k1->second.get_hely()].get_termekek()[a2.first])>(k1->second.get_rakomany().find(a2.first)->second))<<endl;
+                                if((a2.second-allomasok[k1->second.get_hely()].get_termekek()[a2.first])>(k1->second.get_rakomany().find(a2.first)->second))
                                 {
-
-                                    uj.node.set_allomasok_toltottsege(d.get_vonat_allomas(k1->second.get_hely(), uj.elozmenyek.size()),a2.first,k1->second.get_rakomany().find(a2.first)->second);
+                                    uj.node.set_allomasok_toltottsege(k1->second.get_hely(),a2.first,k1->second.get_rakomany().find(a2.first)->second);
                                     k1->second.lerak(a2.first, k1->second.get_rakomany().find(a2.first)->second);
                                     cout<<"lepakol"<<k1->second;
                                 }
                                 else
                                 {
-                                    uj.node.set_allomasok_toltottsege(d.get_vonat_allomas(k1->second.get_hely(), uj.elozmenyek.size()),a2.first,(a2.second-allomasok[k1->second.get_hely()].get_termekek()[a2.first]));
+                                    uj.node.set_allomasok_toltottsege(k1->second.get_hely(),a2.first,(a2.second-allomasok[k1->second.get_hely()].get_termekek()[a2.first]));
                                     k1->second.lerak(a2.first, (a2.second-allomasok[k1->second.get_hely()].get_termekek()[a2.first]));
                                     cout<<"lepakol"<<k1->second;
                                 }
@@ -1193,46 +1221,48 @@ struct vasuti_halozat_allapot
                     {
                         int celban_levo_termek_mennyisege=0;
                         int allomason_termek_mennyisege=0;
-                        if(k1->second.csatlakoztatva_e())
-                        {
-                            allomason_termek_mennyisege= uj.node.get_allomasok()[d.get_vonat_allomas(k1->second.get_hely(), uj.elozmenyek.size())].get_termek(egy_kocsi.second[i].second);
-                            celban_levo_termek_mennyisege= d.get_cel()[d.get_vonat_allomas(k1->second.get_hely(), uj.elozmenyek.size())].get_termek(egy_kocsi.second[i].second);
+//                        if(k1->second.csatlakoztatva_e())
+//                        {
+//                            allomason_termek_mennyisege= uj.node.get_allomasok()[d.get_vonat_allomas(k1->second.get_hely(), uj.elozmenyek.size())].get_termek(egy_kocsi.second[i].second);
+//                            celban_levo_termek_mennyisege= d.get_cel()[d.get_vonat_allomas(k1->second.get_hely(), uj.elozmenyek.size())].get_termek(egy_kocsi.second[i].second);
 
-                        }
-                        else
-                        {
+//                        }
+//                        else
+//                        {
                             allomason_termek_mennyisege=uj.node.get_allomasok()[k1->second.get_hely()].get_termek(egy_kocsi.second[i].second);
                             celban_levo_termek_mennyisege=d.get_cel()[k1->second.get_hely()].get_termek(egy_kocsi.second[i].second);
 
-                        }
+//                        }
                         int elviheto_termek=allomason_termek_mennyisege-celban_levo_termek_mennyisege;
 
-                        if(k1->second.csatlakoztatva_e())
-                        {
+//                        if(k1->second.csatlakoztatva_e())
+//                        {
 
-                            //kocsiban a hely>termek mennyisege
+//                            //kocsiban a hely>termek mennyisege
+//                            if((d.get_kocsi_arukapacitasa(k1->first)-k1->second.get_toltottseg())> elviheto_termek)
+//                            {
+//                                k1->second.felvesz(egy_kocsi.second[i].second,elviheto_termek);
+//                                uj.node.set_allomasok_toltottsege(d.get_vonat_allomas(k1->second.get_hely(), uj.elozmenyek.size()),egy_kocsi.second[i].second,-elviheto_termek);
+
+//                            }
+//                            else
+//                            {
+//                                int m= (d.get_kocsi_arukapacitasa(k1->first)-k1->second.get_toltottseg());
+//                                k1->second.felvesz(egy_kocsi.second[i].second,m);
+//                                //uj.node.get_allomasok()[d.get_vonat_allomas(k1->second.get_hely(), uj.elozmenyek.size())].get_termek(egy_kocsi.second[i].second)-m
+//                                uj.node.set_allomasok_toltottsege(d.get_vonat_allomas(k1->second.get_hely(), uj.elozmenyek.size()),egy_kocsi.second[i].second,-m);
+
+//                            }
+//                            cout<<"felpakol"<<k1->second;
+//                        }
+//                        else
+//                        {
+                        if(elviheto_termek>0)
+                        {
+                            //tobb hely van a kocsin szabadon mint amit el tudok vinni
                             if((d.get_kocsi_arukapacitasa(k1->first)-k1->second.get_toltottseg())> elviheto_termek)
                             {
-                                // int celbaert_termek=
-                                k1->second.felvesz(egy_kocsi.second[i].second,elviheto_termek);
-                                uj.node.set_allomasok_toltottsege(d.get_vonat_allomas(k1->second.get_hely(), uj.elozmenyek.size()),egy_kocsi.second[i].second,-elviheto_termek);
 
-                            }
-                            else
-                            {
-                                int m= (d.get_kocsi_arukapacitasa(k1->first)-k1->second.get_toltottseg());
-                                k1->second.felvesz(egy_kocsi.second[i].second,m);
-                                //uj.node.get_allomasok()[d.get_vonat_allomas(k1->second.get_hely(), uj.elozmenyek.size())].get_termek(egy_kocsi.second[i].second)-m
-                                uj.node.set_allomasok_toltottsege(d.get_vonat_allomas(k1->second.get_hely(), uj.elozmenyek.size()),egy_kocsi.second[i].second,-m);
-
-                            }
-                            cout<<"felpakol"<<k1->second;
-                        }
-                        else
-                        {
-                            if((d.get_kocsi_arukapacitasa(k1->first)-k1->second.get_toltottseg())> elviheto_termek)
-                            {
-                                int m= uj.node.get_allomasok()[k1->second.get_hely()].get_termek(egy_kocsi.second[i].second);
                                 k1->second.felvesz(egy_kocsi.second[i].second,elviheto_termek);
                                 uj.node.set_allomasok_toltottsege(k1->second.get_hely(),egy_kocsi.second[i].second,-elviheto_termek);
 
@@ -1244,8 +1274,8 @@ struct vasuti_halozat_allapot
                                 uj.node.set_allomasok_toltottsege(k1->second.get_hely(),egy_kocsi.second[i].second,-m);
                             }
                             cout<<"felpakol"<<k1->second;
-
-                        }
+                         }
+//                        }
 
                     }
 
@@ -1266,6 +1296,12 @@ struct vasuti_halozat_allapot
     }
 };
 
+double heur(const vasuti_halozat_allapot& node)
+{
+    //felt√©telek
+    return 1;
+}
+
 template<typename T>
 class NodeSet
 {
@@ -1276,7 +1312,7 @@ public:
         auto it_max = t.begin();
         for (auto it=t.begin(); it!=t.end(); it++)
         {
-            if (value(*it) > value(*it_max))
+            if (heur(*it) > heur(*it_max))
             {
                 it_max = it;
             }
@@ -1302,17 +1338,16 @@ public:
 
 bool operator<(vasuti_halozat_allapot a, vasuti_halozat_allapot b)
 {
-    if(a.node!=b.node)
+    if(a.elozmenyek.size()!=b.elozmenyek.size())
+        return a.elozmenyek.size()<b.elozmenyek.size();
+    else if(a.node!=b.node)
+    {
         return a.node<b.node;
+    }
     else
         return a.elozmenyek<b.elozmenyek;
 }
 
-double heur(vasuti_halozat_allapot& node)
-{
-    //feltÈtelek
-    return 1;
-}
 
 
 //priority_queue<vasuti_halozat_allapot, vector<vasuti_halozat_allapot>, std::function<bool(vasuti_halozat_allapot, vasuti_halozat_allapot)>> q;
@@ -1321,8 +1356,45 @@ double heur(vasuti_halozat_allapot& node)
 int main()
 {
     database d;
-    vasuti_halozat k(d);
+    vasuti_halozat k(d,"teszt3.txt");
     vasuti_halozat_allapot a(d, k);
-    a.gyerekek_general();
+    //    cout<<"LEGELSO"<<endl;
+    //    auto gyerekek=a.gyerekek_general();
+    //    cout<<"MASODIK"<<endl;
+    //    vector<vector<vasuti_halozat_allapot>> gyerekek1;
+    //    for(auto egy:gyerekek)
+    //    {
+    //        gyerekek1.push_back(egy.gyerekek_general());
+    //    }
+    //    auto gyerekek1=gyerekek[0].gyerekek_general();
+    //    cout<<"HARMADIK"<<endl;
+    //    auto gyerekek2=gyerekek1[0].gyerekek_general();
+    //    cout<<"NEGYEDIK"<<endl;
+    //    auto gyerekek3=gyerekek2[0].gyerekek_general();
+        int i=0;
+        NodeSet<vasuti_halozat_allapot> ns;
+        ns.put(a);
+        bool megtalaltuk=false;
+        vasuti_halozat_allapot legjobb=a;
+        while(!megtalaltuk && ns.size()>0)
+        {
+            cout<<"AZ "<<i<<". KOR:"<<endl;
+            vasuti_halozat_allapot aktualis=ns.pop_max();
+            if(d.cel_e(aktualis.node.get_allomasok()))
+            {
+                legjobb=aktualis;
+                megtalaltuk=true;
+            }
+            vector<vasuti_halozat_allapot> gyerekek=aktualis.gyerekek_general();
+            for(vasuti_halozat_allapot b:gyerekek)
+            {
+                ns.put(b);
+            }
+            i++;
+        }
+        if(megtalaltuk)
+        {
+            cout<<"JUHUUUUU";
+        }
     return 0;
 }
