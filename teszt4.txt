@@ -1,0 +1,13 @@
+V1 5 2
+A 1 
+B 2 
+C 4
+B 6
+A 7
+;
+a 10 A
+b 15 B
+;
+cucc1 A C 35
+cucc2 B C 15
+;
