@@ -1,0 +1,46 @@
+V1 8 2
+A 0
+B 1
+C 3
+D 4
+E 5
+C 7
+B 8
+A 9
+V2 9 4
+I 2
+H 3
+B 5
+G 6
+F 7
+G 8
+B 9
+H 11
+I 12
+V3 9 2
+L 0
+H 1
+D 2
+K 3
+M 4
+K 5
+D 6
+H 7
+L 8
+V4 5 3
+C 2
+E 3
+K 4
+J 8
+C 9
+;
+a 10 G
+b 5 B
+c 20 D
+d 15 L
+;
+cucc1 C E 37
+cucc2 I M 21
+cucc3 F J 15
+cucc4 G L 10
+;
