@@ -875,11 +875,15 @@ public:
                 auto vend=p.second.second.end();
                 --vend;
                 int menetrendeksize=vend->first;
-                for(int i=0; i<=menetrendeksize; i++)
+                for(int i=0; i<=menetrendeksize-1; i++)
                 {
-                    if(p.second.second.find(i)==p.second.second.end())
+                    if(i>p.second.second.begin()->first && p.second.second.find(i)==p.second.second.end())
                     {
                         menetrendek[p.first].push_back("NIS");
+                    }
+                    else if(i<p.second.second.begin()->first)
+                    {
+                        menetrendek[p.first].push_back(p.second.second.begin()->second);
                     }
                     else
                     {
@@ -1235,17 +1239,17 @@ struct vasuti_halozat_allapot
                         for(auto i:(k.second.get_rakomany()))
                         {
                             lehetseges_akciok[k.first].insert(vector<pair<char, string>>({pair<char, string>('a',"0"), pair<char, string>('c', i.first)}));
-                            //lecsatol-lepakol-felcsatol -- nem engeded meg, hogy visszacsatolhassuk arra, amiről lecsatoltuk
-                            if(d.get_vonatok_allomason((d.get_vonat_allomas(k.second.get_hely(),elozmenyek.size())), elozmenyek.size()).size()>1)
-                            {
-                                for(auto p:(d.get_vonatok_allomason((d.get_vonat_allomas(k.second.get_hely(),elozmenyek.size())), elozmenyek.size())))
-                                {
-                                    if(p!=k.second.get_hely())
-                                    {
-                                        lehetseges_akciok[k.first].insert(vector<pair<char, string>>({pair<char, string>('a',"0"), pair<char, string>('c', i.first), pair<char, string>('b', p)}));
-                                    }
-                                }
-                            }
+//                            //lecsatol-lepakol-felcsatol -- nem engeded meg, hogy visszacsatolhassuk arra, amiről lecsatoltuk
+//                            if(d.get_vonatok_allomason((d.get_vonat_allomas(k.second.get_hely(),elozmenyek.size())), elozmenyek.size()).size()>1)
+//                            {
+//                                for(auto p:(d.get_vonatok_allomason((d.get_vonat_allomas(k.second.get_hely(),elozmenyek.size())), elozmenyek.size())))
+//                                {
+//                                    if(p!=k.second.get_hely())
+//                                    {
+//                                        lehetseges_akciok[k.first].insert(vector<pair<char, string>>({pair<char, string>('a',"0"), pair<char, string>('c', i.first), pair<char, string>('b', p)}));
+//                                    }
+//                                }
+//                            }
                             //leccsatol-lepakol-felpakol
                             if(allomasok[(d.get_vonat_allomas(k.second.get_hely(),elozmenyek.size()))].termek_mennyiseg()>0)
                             {
@@ -1277,12 +1281,12 @@ struct vasuti_halozat_allapot
                         {
                            // cout<<"BAAAAAAAAJ--------------------------------"<<endl;
                             lehetseges_akciok[k.first].insert(vector<pair<char, string>>({pair<char, string>('a',"0"), pair<char, string>('z', a.first)}));
-                            //+felcsatol
-                                for(auto p:(d.get_vonatok_allomason(d.get_vonat_allomas(k.second.get_hely(),elozmenyek.size()), elozmenyek.size())))
-                                {
-                                        //cout<<"----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------"<<endl;
-                                        lehetseges_akciok[k.first].insert(vector<pair<char, string>>({pair<char, string>('a',"0"), pair<char, string>('z', a.first), pair<char, string>('b', p)}));
-                                }
+//                            //+felcsatol
+//                                for(auto p:(d.get_vonatok_allomason(d.get_vonat_allomas(k.second.get_hely(),elozmenyek.size()), elozmenyek.size())))
+//                                {
+//                                        //cout<<"----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------"<<endl;
+//                                        lehetseges_akciok[k.first].insert(vector<pair<char, string>>({pair<char, string>('a',"0"), pair<char, string>('z', a.first), pair<char, string>('b', p)}));
+//                                }
                             //+felpakol
                             if(allomasok[d.get_vonat_allomas(k.second.get_hely(),elozmenyek.size())].termek_mennyiseg()!=0)
                             {
@@ -1469,7 +1473,7 @@ double heur1(const vasuti_halozat_allapot& a, database& d)
             value+=abs(t.second-aktualis[p.first].get_termekek()[t.first]);
         }
     }
-    value+=a.elozmenyek.size()*2;//idoben minél korábban van, annál kisebb, ezért annál nagyobb számmal osztom az 1000-et
+    //value+=a.elozmenyek.size()*2;//idoben minél korábban van, annál kisebb, ezért annál nagyobb számmal osztom az 1000-et
     return (1000/value);
 }
 
@@ -1482,7 +1486,7 @@ double heur2(const vasuti_halozat_allapot&a, database& d)
     {
         if(kocsi.second.get_toltottseg()>0)
         {
-            value+=kocsi.second.get_toltottseg()*3;
+            value+=kocsi.second.get_toltottseg()*5;
             value+=kocsi.second.csatlakoztatva_e()*5;
             if(!kocsi.second.csatlakoztatva_e() && kocsi.second.get_toltottseg()>0)
             {
@@ -1518,7 +1522,7 @@ double heur2(const vasuti_halozat_allapot&a, database& d)
                 }
                 if(elviheto_mennyiseg>0)
                 {
-                    value+=((kocsi.second.csatlakoztatva_e())*5);
+                    value-=((kocsi.second.csatlakoztatva_e())*5);
                 }
             }
         }
@@ -1689,7 +1693,7 @@ bool operator==(vasuti_halozat_allapot a, vasuti_halozat_allapot b)
 int main()
 {
     database d;
-    vasuti_halozat k(d,"teszt4.txt");
+    vasuti_halozat k(d,"teszt13.txt");
     vasuti_halozat_allapot a(d, k);
     int i=0;
     NodeSet<vasuti_halozat_allapot> ns(d);
@@ -1741,7 +1745,7 @@ int main()
         }
         cout<<"CEL:"<<endl;
         cout<<legjobb.node<<endl;
-        cout<<(i+1)<<"ido alatt lehet megoldani";
+        cout<<(i)<<"ido alatt lehet megoldani"<<endl;
     }
     return 0;
 }
