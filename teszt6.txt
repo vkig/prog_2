@@ -1,0 +1,21 @@
+V2 6 1
+A 1
+D 2
+C 3
+E 4
+D 5
+A 7
+V1 5 2
+A 1 
+B 2 
+C 4
+B 6
+A 7
+;
+a 10 C
+;
+cucc1 A C 10
+cucc1 A A 10
+cucc2 B C 10
+cucc2 B B 10
+;
